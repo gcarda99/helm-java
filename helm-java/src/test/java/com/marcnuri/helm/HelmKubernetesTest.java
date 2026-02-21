@@ -18,7 +18,6 @@ package com.marcnuri.helm;
 
 import com.dajudge.kindcontainer.KindContainer;
 import com.dajudge.kindcontainer.KindContainerVersion;
-import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -884,6 +883,28 @@ class HelmKubernetesTest {
   @Nested
   class History {
 
+    @AfterEach
+    void tearDown() {
+      for (String release : new String[]{
+        "test-history-after-install",
+        "test-history-after-install-and-upgrade",
+        "test-history-with-max",
+        "test-history-with-kube-config-contents"
+      }) {
+        try {
+          Helm.uninstall(release).withKubeConfig(kubeConfigFile).call();
+        } catch (Exception ignored) {
+          // release may not exist
+        }
+      }
+      try {
+        Helm.uninstall("test-history-with-namespace").withKubeConfig(kubeConfigFile)
+          .withNamespace("history-namespace").call();
+      } catch (Exception ignored) {
+        // release may not exist
+      }
+    }
+
     @Nested
     class Valid {
 
@@ -1007,11 +1028,9 @@ class HelmKubernetesTest {
 
       @Test
       void nonExistentRelease() {
-        AssertionsForClassTypes.assertThatThrownBy(() ->
-                                                     Helm.history("non-existent-release")
-                                                       .withKubeConfig(kubeConfigFile)
-                                                       .call()
-          )
+        final HistoryCommand historyCommand = Helm.history("non-existent-release")
+          .withKubeConfig(kubeConfigFile);
+        assertThatThrownBy(historyCommand::call)
           .isInstanceOf(IllegalStateException.class)
           .hasMessageContaining("release: not found");
       }

@@ -47,20 +47,19 @@ func History(options *HistoryOptions) (string, error) {
 	}
 
 	client := action.NewHistory(cfg)
+	// Set client.Max for when Helm honors it natively; until then, we also filter manually below.
+	maxReleases := options.Max
+	if maxReleases <= 0 {
+		maxReleases = 256 // Default from Helm CLI
+	}
+	client.Max = maxReleases
 	releases, err := client.Run(options.ReleaseName)
 
 	if err != nil {
 		return "", err
 	}
 
-	// Apply Max filter manually since action.History.Run() does not honor the Max field.
-	// The Run() method returns all revisions for a release, and the Max limit is expected
-	// to be applied by the caller (as done in the Helm CLI). We keep only the most recent
-	// 'maxReleases' revisions by slicing from the end of the list.
-	maxReleases := options.Max
-	if maxReleases <= 0 {
-		maxReleases = 256 // Default from Helm CLI
-	}
+	// Manual safety net: keep only the most recent 'maxReleases' revisions.
 	if len(releases) > maxReleases {
 		releases = releases[len(releases)-maxReleases:]
 	}
