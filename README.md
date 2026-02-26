@@ -127,6 +127,31 @@ String values = Helm.get("release-name").values()
   .call();
 ```
 
+### History
+
+Equivalent of [`helm history`](https://helm.sh/docs/helm/helm_history/).
+
+Fetch release history. Returns the list of revisions for a given release.
+
+``` java
+List<ReleaseHistory> history = Helm.history("release-name")
+  // Optionally limit the maximum number of revisions to retrieve (default is 256)
+  .withMax(10)
+  // Optionally specify the Kubernetes namespace
+  .withNamespace("namespace")
+  // Optionally specify the path to the kubeconfig file to use for CLI requests
+  .withKubeConfig(Paths.get("path", "to", "kubeconfig"))
+  // Optionally set the contents of the kubeconfig file as a string (takes precedence over the path)
+  .withKubeConfigContents("apiVersion: v1\nkind: Config\nclusters:\n...")
+  .call();
+history.get(0).getRevision();    // revision number (int)
+history.get(0).getStatus();      // status (deployed, superseded, failed, etc.)
+history.get(0).getChart();       // chart name and version
+history.get(0).getAppVersion();  // app version
+history.get(0).getDescription(); // description (e.g. "Install complete", "Upgrade complete")
+history.get(0).getUpdated();     // last update time
+```
+
 ### Install
 
 Equivalent of [`helm install`](https://helm.sh/docs/helm/helm_install/).
